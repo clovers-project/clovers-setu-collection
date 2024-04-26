@@ -1,8 +1,6 @@
 import httpx
 import json
 
-from nonebot import logger
-
 
 async def Lolicon(N: int = 1, Tag: str = "", R18: int = 0):
     if Tag:
