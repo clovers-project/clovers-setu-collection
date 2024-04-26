@@ -1,7 +1,8 @@
 from clovers.core.plugin import Plugin, Event, Result
 from clovers.utils.tools import to_int, download_url
 from .setu_api import SetuAPI
-from .api.Anosu import anosu_api
+from .api.Anosu import Anosu_api
+from .api.MirlKoi import MirlKoi_api, MirlKoi_tags
 
 plugin = Plugin()
 
@@ -41,14 +42,9 @@ async def _(event: Event):
     msg.append(f"{Bot_Nickname}为你准备了{n}张随机{tag}图片！")
 
     def choice_api(tag: str) -> SetuAPI:
-        return anosu_api
-        # if not tag or (tag := is_MirlKoi_tag(tag)):
-        #     api = "MirlKoi API"
-        #     setufunc = MirlKoi
-        # else:
-        #     api = "Jitsu"
-        #     setufunc = Anosu
-        # pass
+        if not tag or tag in MirlKoi_tags:
+            return MirlKoi_api
+        return Anosu_api
 
     if event.kwargs["group_id"]:
         if r18:
@@ -57,15 +53,17 @@ async def _(event: Event):
         if r18:
             r18 = 1
     api = choice_api(tag)
+    msg.append(f"使用api：{api.name}")
+    msg = "\n".join(msg)
     image_list = await api.call(n, r18, tag, headers={"Referer": "http://www.weibo.com/"})
-    if image_list is None:
-        msg.append("连接失败，请稍等一年后重试。")
-        return Result("text", "\n".join(msg))
+    if not image_list:
+        return Result("text", msg + "\n连接失败，请稍等一年后重试。")
+    image_list = [Result("image", image) for image in image_list]
     if len(image_list) == 1:
-        return Result("list", [Result("text", "\n".join(msg)), image_list[0]])
+        return Result("list", [Result("text", msg), image_list[0]])
 
     async def result():
-        yield Result("text", "\n".join(msg))
+        yield Result("text", msg)
         for image in image_list:
             yield image
 

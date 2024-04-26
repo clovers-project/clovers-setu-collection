@@ -1,16 +1,9 @@
 import httpx
 import json
+from ..setu_api import SetuAPI
 
-MirlKoi_list = {}
-MirlKoi_list["iw233"] = []
-MirlKoi_list["top"] = []
-MirlKoi_list["yin"] = []
-MirlKoi_list["cat"] = []
-MirlKoi_list["xing"] = []
-MirlKoi_list["mp"] = []
-MirlKoi_list["pc"] = []
-
-MirlKoi_tag = {
+MirlKoi_tags: set[str] = set()
+tags_sort: dict[str, str] = {
     "涩图 随机图片 随机壁纸": "iw233",
     "推荐": "top",
     "白毛 白发 银发": "yin",
@@ -19,36 +12,29 @@ MirlKoi_tag = {
     "壁纸 竖屏壁纸 手机壁纸": "mp",
     "电脑壁纸 横屏壁纸": "pc",
 }
-
-tag_dict = {}
-for key in MirlKoi_tag:
-    value = MirlKoi_tag[key]
-    tag_dict[value] = key.split()[0]
-
-
-def is_MirlKoi_tag(Tag: str = ""):
-    for x in MirlKoi_tag.keys():
-        if Tag in x.split():
-            return MirlKoi_tag[x]
-        else:
-            continue
-    else:
-        return None
+sort_dict: dict[str, str] = {}
+url_cache: dict[str, list[str]] = {}
+for k, v in tags_sort.items():
+    url_cache[v] = []
+    for tag in k.split():
+        sort_dict[tag] = k
+        MirlKoi_tags.add(tag)
 
 
-async def MirlKoi(N: int = 1, Tag: str = None):
-    tag = tag_dict.get(Tag, "iw233")
-    async with httpx.AsyncClient() as client:
-        url = f"https://dev.iw233.cn/api.php?sort={tag}&type=json&num=100"
-        resp = await client.get(url)
+async def MirlKoi(n: int, r18: int, tag: str):
+    tag = sort_dict.get(tag, "iw233")
+    if len(url_cache[tag]) < n:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"https://dev.iw233.cn/api.php?sort={tag}&type=json&num=100",
+                headers={"Referer": "http://www.weibo.com/"},
+            )
+        if resp.status_code != 200:
+            return
+        url_cache[tag].extend(json.loads("".join(x for x in resp if x.isprintable()))["pic"])
+    url_list = url_cache[tag][:n]
+    url_cache[tag] = url_cache[tag][n:]
+    return url_list
 
-    if resp.status_code != 200:
-        return
 
-    resp = resp.text
-    resp = "".join(x for x in resp if x.isprintable())
-    MirlKoi_list[tag] += json.loads(resp)["pic"]
-
-    image_list = MirlKoi_list[tag][:N]
-    MirlKoi_list[tag] = MirlKoi_list[tag][N:]
-    return image_list
+MirlKoi_api = SetuAPI(MirlKoi, "MirlKoi")
