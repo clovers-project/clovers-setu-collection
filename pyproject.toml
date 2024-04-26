@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "clovers_setu_collection"
+version = "0.1.0"
+description = ""
+authors = ["karisaya <1048827424@qq.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.7.1"
+clovers = {extras = ["tools"], version = "^0.1.5"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
