@@ -21,7 +21,7 @@ pip install clovers-setu-collection
 ## ⚙️ 配置
 
 ```toml
-[clovers-setu-collection]
+[clovers_setu_collection]
 # 是否保存从api获取的图片
 save_image = true
 # 主路径

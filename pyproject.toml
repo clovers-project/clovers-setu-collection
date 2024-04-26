@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "clovers-setu-collection"
+name = "clovers_setu_collection"
 version = "0.1.0"
 description = ""
 authors = ["karisaya <1048827424@qq.com>"]
