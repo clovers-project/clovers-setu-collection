@@ -1,6 +1,6 @@
-import re
 from clovers.core.plugin import Plugin, Event, Result
 from clovers.utils.tools import to_int, download_url
+from setu_api import SetuAPI
 from .api.MirlKoi import MirlKoi, is_MirlKoi_tag
 from .api.Anosu import Anosu
 
@@ -23,7 +23,7 @@ async def _(event: Event):
 
 
 @plugin.handle(r"来(.*)[张份]([rR]18)?(.+)$", ["Bot_Nickname", "group_id", "user_id"])
-async def _(event: Event) -> Result:
+async def _(event: Event):
     Bot_Nickname = event.kwargs["Bot_Nickname"]
     n, r18, tag = event.args
     if n:
@@ -41,14 +41,14 @@ async def _(event: Event) -> Result:
 
     resp.append(f"{Bot_Nickname}为你准备了{n}张随机{tag}图片！")
 
-    def choice_api(tag: str):
+    def choice_api(tag: str) -> SetuAPI:
         if not tag or (tag := is_MirlKoi_tag(tag)):
             api = "MirlKoi API"
             setufunc = MirlKoi
         else:
             api = "Jitsu"
             setufunc = Anosu
-        return setufunc
+        pass
 
     if event.kwargs["group_id"]:
         if r18:
