@@ -166,12 +166,12 @@ async def _(event: Event):
         finish()
         api = event.raw_command
         if api not in apiname_dict:
-            return "设置失败"
+            return Result("text", "设置失败")
         customer_api[user_id] = event.raw_command
         save_customer_api()
-        return f"已设置为：{apiname_dict[event.raw_command]}"
+        return Result("text", f"已设置为：{apiname_dict[event.raw_command]}")
 
-    return f"请选择\n{api_tip}"
+    return Result("text", f"请选择\n{api_tip}")
 
 
 __plugin__ = plugin
