@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 from collections.abc import Callable
 from clovers.core.plugin import Plugin, Event, Result
@@ -6,14 +7,18 @@ from clovers.utils.tools import to_int
 from .setu_api import SetuAPI
 from .api.Anosu import Anosu_api
 from .api.MirlKoi import MirlKoi_api, MirlKoi_tags
+from .api.Lolicon import Lolicon_api
 from clovers.core.config import config as clovers_config
 from .config import Config
 
 config_key = __package__
 config_data = Config.model_validate(clovers_config.get(config_key, {}))
 clovers_config[config_key] = config_data.model_dump()
+
 path = Path(config_data.path)
 image_file = path / "image"
+image_file.mkdir(parents=True, exist_ok=True)
+
 customer_api_file = path / "customer_api.json"
 customer_api: dict[str, str]
 if customer_api_file.exists():
@@ -29,7 +34,8 @@ def save_customer_api():
         json.dump(customer_api, f, ensure_ascii=False, indent=4)
 
 
-api_dict = {"1": "Jitsu/MirlKoi API", "2": "Lolicon API"}
+apiname_dict = {"1": "Jitsu/MirlKoi API", "2": "Lolicon API"}
+api_dict = {"2": Lolicon_api}
 plugin = Plugin()
 
 
@@ -48,8 +54,8 @@ async def _(event: Event):
     return Result("text", msg)
 
 
-open_r18_in_private = config_data.open_r18_in_private
-open_r18_in_public = config_data.open_r18_in_public
+public_setu_limit = config_data.public_setu_limit
+private_setu_limit = config_data.private_setu_limit
 save_image = config_data.save_image
 
 translate: Callable[[list[bytes]], list[Result]]
@@ -69,8 +75,10 @@ else:
     translate = translate_with_save
 
 
-@plugin.handle(r"来(.*)[张份]([rR]18)?(.+)$", ["Bot_Nickname", "group_id", "user_id"])
+@plugin.handle(r"来(.*)[张份]([rR]18)?(.+)$", ["to_me", "Bot_Nickname", "group_id", "user_id"])
 async def _(event: Event):
+    if not event.kwargs["to_me"]:
+        return
     Bot_Nickname = event.kwargs["Bot_Nickname"]
     n, r18, tag = event.args
     if n:
@@ -87,33 +95,43 @@ async def _(event: Event):
         msg.append("最多可以点5张图片哦")
 
     msg.append(f"{Bot_Nickname}为你准备了{n}张随机{tag}图片！")
-    if r18:
-        if event.kwargs["group_id"]:
-            if open_r18_in_public:
-                r18 = 1
-            else:
-                r18 = 0
-                msg.append("(r18禁止)")
-        else:
-            if open_r18_in_private:
-                r18 = 1
-            else:
-                r18 = 0
-                msg.append("(r18禁止)")
-    else:
-        r18 = 0
 
-    def choice_api(tag: str) -> SetuAPI:
+    def public_api(tag: str) -> SetuAPI:
         if not tag or tag in MirlKoi_tags:
             return MirlKoi_api
         return Anosu_api
 
-    api = choice_api(tag)
+    def private_api(user_id: str, tag: str):
+        if api_id := customer_api.get(user_id):
+            return api_dict.get(api_id) or public_api(tag)
+        return public_api(tag)
+
+    if r18:
+        if event.kwargs["group_id"]:
+            if public_setu_limit:
+                r18 = 0
+                msg.append("(r18禁止)")
+                api = public_api(tag)
+            else:
+                r18 = 0
+                api = private_api(event.kwargs["user_id"], tag)
+        else:
+            if private_setu_limit:
+                r18 = 0
+                msg.append("(r18禁止)")
+            else:
+                r18 = 1
+            api = private_api(event.kwargs["user_id"], tag)
+    else:
+        r18 = 0
+
     msg.append(f"使用api：{api.name}")
-    msg = "\n".join(msg)
+    start = time.time()
     image_list = await api.call(n, r18, tag, headers={"Referer": "http://www.weibo.com/"})
+    msg.append(f"获取耗时：{round((time.time() - start)*1000,2)}ms")
+    msg = "\n".join(msg)
     if not image_list:
-        return Result("text", msg + "\n连接失败，请稍后重试。")
+        return Result("text", msg + "\n获取图片失败...")
     if save_image:
         for image in image_list:
             image_name = hex(hash(image))[2:] + ".png"
@@ -132,12 +150,12 @@ async def _(event: Event):
     return Result("segmented", result())
 
 
-api_tip = "\n".join(f"{k}.{v}" for k, v in api_dict.items())
+api_tip = "\n".join(f"{k}.{v}" for k, v in apiname_dict.items())
 
 
-@plugin.handle({"设置api", "切换api", "指定api"}, ["group_id", "user_id"])
+@plugin.handle({"设置api", "切换api", "指定api"}, ["to_me", "group_id", "user_id"])
 async def _(event: Event):
-    if event.kwargs["group_id"]:
+    if not event.kwargs["to_me"]:
         return
     user_id = event.kwargs["user_id"]
 
@@ -147,11 +165,11 @@ async def _(event: Event):
             return
         finish()
         api = event.raw_command
-        if api not in api_dict:
+        if api not in apiname_dict:
             return "设置失败"
         customer_api[user_id] = event.raw_command
         save_customer_api()
-        return f"已设置为：{api_dict[event.raw_command]}"
+        return f"已设置为：{apiname_dict[event.raw_command]}"
 
     return f"请选择\n{api_tip}"
 

@@ -31,10 +31,10 @@ async def MirlKoi(n: int, r18: int, tag: str):
             )
         if resp.status_code != 200:
             return
-        url_cache[tag].extend(json.loads("".join(x for x in resp if x.isprintable()))["pic"])
+        url_cache[tag].extend(json.loads("".join(x for x in resp.text if x.isprintable()))["pic"])
     url_list = url_cache[tag][:n]
     url_cache[tag] = url_cache[tag][n:]
     return url_list
 
 
-MirlKoi_api = SetuAPI(MirlKoi, "MirlKoi")
+MirlKoi_api = SetuAPI(MirlKoi, "MirlKoi API")
