@@ -1,5 +1,8 @@
+import json
+from pathlib import Path
+from collections.abc import Callable
 from clovers.core.plugin import Plugin, Event, Result
-from clovers.utils.tools import to_int, download_url
+from clovers.utils.tools import to_int
 from .setu_api import SetuAPI
 from .api.Anosu import Anosu_api
 from .api.MirlKoi import MirlKoi_api, MirlKoi_tags
@@ -9,7 +12,24 @@ from .config import Config
 config_key = __package__
 config_data = Config.model_validate(clovers_config.get(config_key, {}))
 clovers_config[config_key] = config_data.model_dump()
+path = Path(config_data.path)
+image_file = path / "image"
+customer_api_file = path / "customer_api.json"
+customer_api: dict[str, str]
+if customer_api_file.exists():
+    with open(customer_api_file, "r", encoding="utf8") as f:
+        customer_api = json.load(f)
+else:
+    customer_api_file.parent.mkdir(parents=True, exist_ok=True)
+    customer_api = {}
 
+
+def save_customer_api():
+    with open(customer_api_file, "w", encoding="utf8") as f:
+        json.dump(customer_api, f, ensure_ascii=False, indent=4)
+
+
+api_dict = {"1": "Jitsu/MirlKoi API", "2": "Lolicon API"}
 plugin = Plugin()
 
 
@@ -30,6 +50,22 @@ async def _(event: Event):
 
 open_r18_in_private = config_data.open_r18_in_private
 open_r18_in_public = config_data.open_r18_in_public
+save_image = config_data.save_image
+translate: Callable[[list[bytes]], list[Result]]
+if save_image:
+    translate = lambda image_list: [Result("image", image) for image in image_list]
+else:
+
+    def translate_with_save(image_list: list[bytes]):
+        result: list[Result] = []
+        for image in image_list:
+            image_name = hex(hash(image))[2:] + ".png"
+            with open(image_file / image_name, "wb") as f:
+                f.write(image)
+            result.append(Result("image", image))
+        return result
+
+    translate = translate_with_save
 
 
 @plugin.handle(r"来(.*)[张份]([rR]18)?(.+)$", ["Bot_Nickname", "group_id", "user_id"])
@@ -76,8 +112,14 @@ async def _(event: Event):
     msg = "\n".join(msg)
     image_list = await api.call(n, r18, tag, headers={"Referer": "http://www.weibo.com/"})
     if not image_list:
-        return Result("text", msg + "\n连接失败，请稍等一年后重试。")
-    image_list = [Result("image", image) for image in image_list]
+        return Result("text", msg + "\n连接失败，请稍后重试。")
+    if save_image:
+        for image in image_list:
+            image_name = hex(hash(image))[2:] + ".png"
+            with open(image_file / image_name, "wb") as f:
+                f.write(image)
+
+    image_list = translate(image_list)
     if len(image_list) == 1:
         return Result("list", [Result("text", msg), image_list[0]])
 
@@ -89,33 +131,28 @@ async def _(event: Event):
     return Result("segmented", result())
 
 
+api_tip = "\n".join(f"{k}.{v}" for k, v in api_dict.items())
+
+
 @plugin.handle({"设置api", "切换api", "指定api"}, ["group_id", "user_id"])
 async def _(event: Event):
     if event.kwargs["group_id"]:
         return
     user_id = event.kwargs["user_id"]
 
-    @plugin.temp_handle(f"api{user_id}", ["user_id"])
-    async def _(event: Event):
+    @plugin.temp_handle(f"api{user_id}", ["user_id"], timeout=15)
+    async def _(event: Event, finish):
         if event.kwargs["user_id"] != user_id:
             return
+        finish()
+        api = event.raw_command
+        if api not in api_dict:
+            return "设置失败"
+        customer_api[user_id] = event.raw_command
+        save_customer_api()
+        return f"已设置为：{api_dict[event.raw_command]}"
 
-    return "请选择\n1.Jitsu/MirlKoi API\n2.Lolicon API"
-
-    def save():
-        with open(file, "w", encoding="utf8") as f:
-            json.dump(customer_api, f, ensure_ascii=False, indent=4)
-
-    if api == "1":
-        customer_api[user_id] = "Jitsu/MirlKoi API"
-        save()
-        await set_api.finish("api已切换为Jitsu/MirlKoi API")
-    elif api == "2":
-        customer_api[user_id] = "Lolicon API"
-        save()
-        await set_api.finish("api已切换为Lolicon API")
-    else:
-        await set_api.finish("api设置失败")
+    return f"请选择\n{api_tip}"
 
 
 __plugin__ = plugin

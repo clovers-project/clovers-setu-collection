@@ -25,7 +25,7 @@ pip install clovers-setu-collection
 # 是否保存从api获取的图片
 save_image = false
 # 数据位置
-data_path = "data/setu_collection"
+path = "data/setu_collection"
 # 私聊开启r18
 open_r18_in_private = true
 # 群聊开启r18（别开）
