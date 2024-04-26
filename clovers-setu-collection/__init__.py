@@ -51,6 +51,7 @@ async def _(event: Event):
 open_r18_in_private = config_data.open_r18_in_private
 open_r18_in_public = config_data.open_r18_in_public
 save_image = config_data.save_image
+
 translate: Callable[[list[bytes]], list[Result]]
 if save_image:
     translate = lambda image_list: [Result("image", image) for image in image_list]
