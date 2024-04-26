@@ -106,24 +106,38 @@ async def _(event: Event):
             return api_dict.get(api_id) or public_api(tag)
         return public_api(tag)
 
+    group_id = event.kwargs["group_id"]
+    user_id = event.kwargs["user_id"]
+
     if r18:
-        if event.kwargs["group_id"]:
+        if group_id:
             if public_setu_limit:
                 r18 = 0
                 msg.append("(r18禁止)")
                 api = public_api(tag)
             else:
                 r18 = 0
-                api = private_api(event.kwargs["user_id"], tag)
+                api = private_api(user_id, tag)
         else:
             if private_setu_limit:
                 r18 = 0
                 msg.append("(r18禁止)")
             else:
                 r18 = 1
-            api = private_api(event.kwargs["user_id"], tag)
+            api = private_api(user_id, tag)
     else:
         r18 = 0
+        if group_id:
+            if public_setu_limit:
+                api = public_api(tag)
+            else:
+                api = private_api(user_id, tag)
+
+        else:
+            if private_setu_limit:
+                api = public_api(tag)
+            else:
+                api = private_api(user_id, tag)
 
     msg.append(f"使用api：{api.name}")
     start = time.time()
