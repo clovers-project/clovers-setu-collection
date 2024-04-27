@@ -39,7 +39,7 @@ api_dict = {"2": Lolicon_api}
 plugin = Plugin()
 
 
-@plugin.handle({"涩图，色图"}, ["to_me"])
+@plugin.handle({"涩图","色图"}, ["to_me"])
 async def _(event: Event):
     if not event.kwargs["to_me"]:
         return
