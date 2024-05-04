@@ -17,7 +17,7 @@ url_cache: dict[str, list[str]] = {}
 for k, v in tags_sort.items():
     url_cache[v] = []
     for tag in k.split():
-        sort_dict[tag] = k
+        sort_dict[tag] = v
         MirlKoi_tags.add(tag)
 
 
