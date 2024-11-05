@@ -26,16 +26,20 @@ save_image = true
 # 主路径
 path = "data\\setu_collection"
 # 私聊图片限制
-private_setu_limit = false
+private_setu_limit: bool = False
+# 私聊使用的图片api
+private_setu_api: str = "Lolicon API"
 # 群聊图片限制（别关）
-public_setu_limit = true
+public_setu_limit: bool = True
+# 群聊使用的图片api
+public_setu_api: str = "Jitsu/MirlKoi API"
 ```
 
 ## 🎉 介绍
 
 **指令**：`来N张xx色图` `来N张xx` `来N张r18xx色图`
 
-**指令（仅私聊）**：切换 api
+**指令**：切换 api
 
 单次最多发送 5 张色图
 
