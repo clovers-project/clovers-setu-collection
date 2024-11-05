@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clovers_setu_collection"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = ["karisaya <1048827424@qq.com>"]
 readme = "README.md"
