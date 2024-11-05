@@ -26,13 +26,13 @@ save_image = true
 # 主路径
 path = "data\\setu_collection"
 # 私聊图片限制
-private_setu_limit: bool = False
+private_setu_limit = false
 # 私聊使用的图片api
-private_setu_api: str = "Lolicon API"
+private_setu_api  = "Lolicon API"
 # 群聊图片限制（别关）
-public_setu_limit: bool = True
+public_setu_limit = true
 # 群聊使用的图片api
-public_setu_api: str = "Jitsu/MirlKoi API"
+public_setu_api = "Jitsu/MirlKoi API"
 ```
 
 ## 🎉 介绍
