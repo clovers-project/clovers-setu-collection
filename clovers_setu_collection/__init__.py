@@ -55,13 +55,6 @@ save_image = config_data.save_image
 
 if save_image:
 
-    def translate_without_save(image_list: list[bytes]):
-        return [Result("image", image) for image in image_list]
-
-    translate = translate_without_save
-
-else:
-
     def translate_with_save(image_list: list[bytes]):
         result: list[Result] = []
         for image in image_list:
@@ -72,6 +65,13 @@ else:
         return result
 
     translate = translate_with_save
+
+else:
+
+    def translate_without_save(image_list: list[bytes]):
+        return [Result("image", image) for image in image_list]
+
+    translate = translate_without_save
 
 
 def get_api(group_id: str, user_id: str, tag: str) -> SetuAPI:
