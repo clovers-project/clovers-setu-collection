@@ -1,13 +1,9 @@
 import json
 import time
 from pathlib import Path
-from clovers.core.plugin import Plugin, Event, Result
-from clovers.utils.tools import to_int
-from .setu_api import SetuAPI
-from .api.Anosu import Anosu_api
-from .api.MirlKoi import MirlKoi_api, MirlKoi_tags
-from .api.Lolicon import Lolicon_api
-from clovers.core.config import config as clovers_config
+from clovers import Plugin, Event, Result
+from .api import AnosuAPI, MirlKoiAPI, LoliconAPI
+from clovers.config import config as clovers_config
 from .config import Config
 
 config_key = __package__
@@ -32,7 +28,7 @@ plugin = Plugin()
 
 
 def to_me(event: Event):
-    return event.kwargs["to_me"]
+    return event.properties["to_me"]
 
 
 @plugin.handle(["涩图", "色图"], ["to_me"], rule=to_me)
@@ -55,7 +51,7 @@ save_image = config_data.save_image
 
 if save_image:
 
-    def translate_with_save(image_list: list[bytes]):
+    def translate(image_list: list[bytes]):
         result: list[Result] = []
         for image in image_list:
             image_name = hex(hash(image))[2:] + ".png"
@@ -64,33 +60,51 @@ if save_image:
             result.append(Result("image", image))
         return result
 
-    translate = translate_with_save
-
 else:
 
-    def translate_without_save(image_list: list[bytes]):
+    def translate(image_list: list[bytes]):
         return [Result("image", image) for image in image_list]
 
-    translate = translate_without_save
+
+lolicon = LoliconAPI()
+anosu = AnosuAPI()
+mirlkoi = MirlKoiAPI()
 
 
-def get_api(group_id: str, user_id: str, tag: str) -> SetuAPI:
-    def choise_api(api_name: str, tag: str) -> SetuAPI:
-        if api_name == "Lolicon API":
-            return Lolicon_api
-        else:
-            if not tag or tag in MirlKoi_tags:
-                return MirlKoi_api
-            return Anosu_api
-
+def get_api(group_id: str, user_id: str, tag: str):
     if user_id in customer_api:
         api_name = customer_api[user_id]
     elif group_id:
         api_name = public_setu_api
     else:
         api_name = private_setu_api
+    if api_name == "Lolicon API":
+        return lolicon
+    else:
+        if not tag or tag in MirlKoiAPI.tags:
+            return mirlkoi
+        return anosu
 
-    return choise_api(api_name, tag)
+
+def to_int(N) -> int | None:
+    try:
+        result = int(N)
+    except ValueError:
+        result = {
+            "零": 0,
+            "一": 1,
+            "二": 2,
+            "两": 2,
+            "三": 3,
+            "四": 4,
+            "五": 5,
+            "六": 6,
+            "七": 7,
+            "八": 8,
+            "九": 9,
+            "十": 10,
+        }.get(N)
+    return result
 
 
 @plugin.handle(r"来(.*)[张份]([rR]18)?(.+)$", ["to_me", "Bot_Nickname", "group_id", "user_id"], rule=to_me)
@@ -98,7 +112,7 @@ async def _(event: Event):
     n, r18, tag = event.args
     if n:
         n = to_int(n)
-        if n is None:
+        if not n:
             return
     else:
         n = 1
@@ -112,12 +126,12 @@ async def _(event: Event):
         n = 5
         msg.append("最多可以点5张图片哦")
 
-    Bot_Nickname = event.kwargs["Bot_Nickname"]
+    Bot_Nickname = event.properties["Bot_Nickname"]
 
     msg.append(f"{Bot_Nickname}为你准备了{n}张随机{tag}图片！")
 
-    group_id = event.kwargs["group_id"]
-    user_id = event.kwargs["user_id"]
+    group_id = event.properties["group_id"]
+    user_id = event.properties["user_id"]
 
     if r18:
         if group_id:
@@ -163,9 +177,12 @@ api_names = ["Jitsu/MirlKoi API", "Lolicon API"]
 
 @plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
 async def _(event: Event):
-    user_id = event.kwargs["user_id"]
+    user_id = event.properties["user_id"]
 
-    @plugin.temp_handle(f"api{user_id}", ["user_id"], timeout=15, rule=lambda event: event.kwargs["user_id"] == user_id)
+    def authn(event: Event):
+        return event.properties["user_id"] == user_id
+
+    @plugin.temp_handle(f"api{user_id}", ["user_id"], timeout=15, rule=authn)
     async def _(event: Event, finish):
         finish()
         try:

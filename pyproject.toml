@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clovers_setu_collection"
-version = "0.1.3r1"
+version = "0.2.0"
 description = ""
 authors = ["karisaya <1048827424@qq.com>"]
 readme = "README.md"
@@ -8,7 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 pydantic = "^2.7.1"
-clovers = {extras = ["tools"], version = "^0.1.16"}
+clovers = "^0.3.1"
+httpx = "^0.28.1"
 
 [build-system]
 requires = ["poetry-core"]
