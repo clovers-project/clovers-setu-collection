@@ -6,7 +6,7 @@ class API(SetuAPI):
     name = "MirlKoi API"
     url_cache: dict[str, list[str]]
     NAME_ALIAS: dict[str, str] = {}
-    tags: set[str] = set
+    tags: set[str] = set()
 
     def __init__(self):
         super().__init__()
@@ -14,7 +14,7 @@ class API(SetuAPI):
         for tag in self.tags:
             self.url_cache[tag] = []
 
-    async def MirlKoi(self, n: int, r18: int, tag: str):
+    async def api(self, n: int, r18: int, tag: str):
         tag = API.NAME_ALIAS.get(tag, "iw233")
         if len(self.url_cache[tag]) < n:
             resp = await self.client.get(
@@ -29,7 +29,7 @@ class API(SetuAPI):
         return url_list
 
 
-for k, v in [
+for namelist, tag in [
     ("涩图 随机图片 随机壁纸", "iw233"),
     ("推荐", "top"),
     ("白毛 白发 银发", "yin"),
@@ -38,6 +38,6 @@ for k, v in [
     ("壁纸 竖屏壁纸 手机壁纸", "mp"),
     ("电脑壁纸 横屏壁纸", "pc"),
 ]:
-    for tag in k.split():
-        API.NAME_ALIAS[tag] = v
+    for name in namelist.split():
+        API.NAME_ALIAS[name] = tag
         API.tags.add(tag)
