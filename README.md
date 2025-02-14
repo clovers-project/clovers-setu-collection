@@ -1,23 +1,25 @@
 <div align="center">
 
-# clovers-setu-collection
+# Clovers-SeTu-Collection
 
 _✨ 从多个 api 获取色图并根据场景整合的色图插件 ✨_
 
-<img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="python">
-<a href="./LICENSE"><img src="https://img.shields.io/github/license/KarisAya/clovers_setu_collection.svg" alt="license"></a>
-<a href="https://pypi.python.org/pypi/clovers_setu_collection"><img src="https://img.shields.io/pypi/v/clovers_setu_collection.svg" alt="pypi"></a>
-<a href="https://pypi.python.org/pypi/clovers_setu_collection"><img src="https://img.shields.io/pypi/dm/clovers_setu_collection" alt="pypi download"></a>
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
+[![pypi](https://img.shields.io/pypi/v/clovers_setu_collection.svg)](https://pypi.python.org/pypi/clovers_setu_collection)
+[![pypi download](https://img.shields.io/pypi/dm/clovers_setu_collection)](https://pypi.python.org/pypi/clovers_setu_collection)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![Github](https://img.shields.io/badge/GitHub-Clovers-00CC33?logo=github)](https://github.com/clovers-project/clovers)
+[![license](https://img.shields.io/github/license/clovers-project/clovers-setu-collection.svg)](./LICENSE)
 
 </div>
 
-## 💿 安装
+# 安装
 
 ```bash
 pip install clovers-setu-collection
 ```
 
-## ⚙️ 配置
+# 配置
 
 ```toml
 [clovers_setu_collection]
@@ -35,7 +37,7 @@ public_setu_limit = true
 public_setu_api = "Jitsu/MirlKoi API"
 ```
 
-## 🎉 介绍
+# 介绍
 
 **指令**：`来N张xx色图` `来N张xx` `来N张r18xx色图`
 
@@ -45,17 +47,7 @@ public_setu_api = "Jitsu/MirlKoi API"
 
 群聊支持单个 tag，私聊支持 3 个 tag（因为私聊用 Lolicon），用空格隔开。
 
-## 📞 联系
-
-如有建议，bug 反馈等可以加群
-
-机器人 bug 研究中心（闲聊群） 744751179
-
-永恒之城（测试群） 724024810
-
-![群号](https://github.com/clovers-project/clovers/blob/master/%E9%99%84%E4%BB%B6/qrcode_1676538742221.jpg)
-
-## 💡 使用的 API
+# 使用的 API
 
 [Jitsu](https://image.anosu.top/) 简单好用的色图 api
 
