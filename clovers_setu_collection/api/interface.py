@@ -1,14 +1,14 @@
 import asyncio
 import httpx
 import logging
-
 from abc import ABC, abstractmethod
 
 logger = logging.getLogger("setu_api")
 
 
 class SetuAPI(ABC):
-    client = httpx.AsyncClient()
+    def __init__(self, **kwargs):
+        self.client = httpx.AsyncClient(**kwargs)
 
     @abstractmethod
     async def api(self, n: int, r18: int, tag: str) -> list[str] | None: ...

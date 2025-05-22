@@ -5,8 +5,16 @@ from .interface import SetuAPI
 class API(SetuAPI):
     name = "MirlKoi API"
     url_cache: dict[str, list[str]]
-    NAME_ALIAS: dict[str, str] = {}
-    tags: set[str] = set()
+    tags: dict[str, tuple[str, ...]] = {
+        "iw233": ("涩图", "随机图片", "随机壁纸"),
+        "top": ("推荐",),
+        "yin": ("白毛", "白发", "银发"),
+        "cat": ("兽耳", "猫耳", "猫娘"),
+        "xing": ("星空", "夜空", "星空壁纸", "夜空壁纸"),
+        "mp": ("壁纸", "竖屏壁纸", "手机壁纸"),
+        "pc": ("电脑壁纸", "横屏壁纸"),
+    }
+    NAME_ALIAS = {v: k for k, vs in tags.items() for v in vs}
 
     def __init__(self):
         super().__init__()
@@ -27,17 +35,3 @@ class API(SetuAPI):
         url_list = self.url_cache[tag][:n]
         self.url_cache[tag] = self.url_cache[tag][n:]
         return url_list
-
-
-for namelist, tag in [
-    ("涩图 随机图片 随机壁纸", "iw233"),
-    ("推荐", "top"),
-    ("白毛 白发 银发", "yin"),
-    ("兽耳 猫耳 猫娘", "cat"),
-    ("星空 夜空 星空壁纸 夜空壁纸", "xing"),
-    ("壁纸 竖屏壁纸 手机壁纸", "mp"),
-    ("电脑壁纸 横屏壁纸", "pc"),
-]:
-    for name in namelist.split():
-        API.NAME_ALIAS[name] = tag
-        API.tags.add(tag)

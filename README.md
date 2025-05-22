@@ -35,6 +35,17 @@ private_setu_api  = "Lolicon API"
 public_setu_limit = true
 # 群聊使用的图片api
 public_setu_api = "Jitsu/MirlKoi API"
+
+# LoliconAPI  httpx 配置
+[clovers_setu_collection.httpx_config.LoliconAPI]
+proxy = "http://127.0.0.1:7897"
+
+# MirlKoiAPI httpx 配置
+[clovers_setu_collection.httpx_config.MirlKoiAPI]
+
+# AnosuAPI httpx 配置
+[clovers_setu_collection.httpx_config.AnosuAPI]
+
 ```
 
 # 介绍

@@ -1,28 +1,53 @@
 import json
 import time
 from pathlib import Path
-from clovers import Plugin, Event, Result
+from clovers import Plugin, Event, Result, TempHandle
 from .api import AnosuAPI, MirlKoiAPI, LoliconAPI
-from clovers.config import config as clovers_config
+
+from clovers.config import Config as CloversConfig
 from .config import Config
 
-config_key = __package__
-config_data = Config.model_validate(clovers_config.get(config_key, {}))
-clovers_config[config_key] = config_data.model_dump()
+config_data = CloversConfig.environ().setdefault(__package__, {})
+__config__ = Config.model_validate(config_data)
+config_data.update(__config__.model_dump())
 
-path = Path(config_data.path)
+
+path = Path(__config__.path)
 image_file = path / "image"
-image_file.mkdir(parents=True, exist_ok=True)
-
 customer_api_file = path / "CustomerAPI.json"
-customer_api: dict[str, str]
-if customer_api_file.exists():
-    with open(customer_api_file, "r", encoding="utf8") as f:
-        customer_api = json.load(f)
-else:
-    customer_api_file.parent.mkdir(parents=True, exist_ok=True)
-    customer_api = {}
 
+public_setu_limit = __config__.public_setu_limit
+public_setu_api = __config__.public_setu_api
+private_setu_limit = __config__.private_setu_limit
+private_setu_api = __config__.private_setu_api
+save_image = __config__.save_image
+httpx_config = __config__.httpx_config
+
+if save_image:
+    image_file.mkdir(parents=True, exist_ok=True)
+
+    def translate(image_list: list[bytes]):
+        result: list[Result] = []
+        for image in image_list:
+            image_name = hex(hash(image))[2:] + ".png"
+            (image_file / image_name).write_bytes(image)
+            result.append(Result("image", image))
+        return result
+
+else:
+
+    def translate(image_list: list[bytes]):
+        return [Result("image", image) for image in image_list]
+
+
+customer_api: dict[str, str]
+
+
+if customer_api_file.exists():
+    customer_api = json.loads(customer_api_file.read_text())
+else:
+    path.mkdir(parents=True, exist_ok=True)
+    customer_api = {}
 
 plugin = Plugin()
 
@@ -43,32 +68,25 @@ async def _(event: Event):
     return Result("text", msg)
 
 
-public_setu_limit = config_data.public_setu_limit
-public_setu_api = config_data.public_setu_api
-private_setu_limit = config_data.private_setu_limit
-private_setu_api = config_data.private_setu_api
-save_image = config_data.save_image
-
-if save_image:
-
-    def translate(image_list: list[bytes]):
-        result: list[Result] = []
-        for image in image_list:
-            image_name = hex(hash(image))[2:] + ".png"
-            with open(image_file / image_name, "wb") as f:
-                f.write(image)
-            result.append(Result("image", image))
-        return result
-
-else:
-
-    def translate(image_list: list[bytes]):
-        return [Result("image", image) for image in image_list]
+lolicon: LoliconAPI
+anosu: AnosuAPI
+mirlkoi: MirlKoiAPI
 
 
-lolicon = LoliconAPI()
-anosu = AnosuAPI()
-mirlkoi = MirlKoiAPI()
+@plugin.startup
+async def _():
+    global lolicon, anosu, mirlkoi
+    lolicon = LoliconAPI(**httpx_config.get("LoliconAPI", {}))
+    anosu = AnosuAPI(**httpx_config.get("AnosuAPI", {}))
+    mirlkoi = MirlKoiAPI(**httpx_config.get("MirlKoiAPI", {}))
+
+
+@plugin.shutdown
+async def _():
+    global lolicon, anosu, mirlkoi
+    await lolicon.client.aclose()
+    await anosu.client.aclose()
+    await mirlkoi.client.aclose()
 
 
 def get_api(group_id: str, user_id: str, tag: str):
@@ -81,29 +99,19 @@ def get_api(group_id: str, user_id: str, tag: str):
     if api_name == "Lolicon API":
         return lolicon
     else:
-        if not tag or tag in MirlKoiAPI.tags:
+        if not tag or tag in MirlKoiAPI.NAME_ALIAS:
             return mirlkoi
         return anosu
+
+
+zh_number = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
 
 
 def to_int(N) -> int | None:
     try:
         result = int(N)
     except ValueError:
-        result = {
-            "零": 0,
-            "一": 1,
-            "二": 2,
-            "两": 2,
-            "三": 3,
-            "四": 4,
-            "五": 5,
-            "六": 6,
-            "七": 7,
-            "八": 8,
-            "九": 9,
-            "十": 10,
-        }.get(N)
+        result = zh_number.get(N)
     return result
 
 
@@ -148,7 +156,6 @@ async def _(event: Event):
                 r18 = 1
     else:
         r18 = 0
-
     api = get_api(group_id, user_id, tag)
 
     msg.append(f"使用api：{api.name}")
@@ -175,25 +182,30 @@ async def _(event: Event):
 api_names = ["Jitsu/MirlKoi API", "Lolicon API"]
 
 
-@plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
-async def _(event: Event):
-    user_id = event.properties["user_id"]
-
-    def authn(event: Event):
+def identify(user_id: str):
+    def rule(event: Event):
         return event.properties["user_id"] == user_id
 
-    @plugin.temp_handle(f"api{user_id}", ["user_id"], timeout=15, rule=authn)
-    async def _(event: Event, finish):
-        finish()
-        try:
-            api = api_names[to_int(event.raw_command) - 1]
-        except (TypeError, IndexError):
-            return Result("text", "设置失败")
-        customer_api[user_id] = api
-        with open(customer_api_file, "w", encoding="utf8") as f:
-            json.dump(customer_api, f, ensure_ascii=False, indent=4)
-        return Result("text", f"已设置为：{api}")
+    return rule
 
+
+async def set_api(event: Event, handle: TempHandle):
+    handle.finish()
+    index = to_int(event.message)
+    if index is None:
+        return Result("text", "设置失败")
+    try:
+        api = api_names[index - 1]
+    except (TypeError, IndexError):
+        return Result("text", "设置失败")
+    customer_api[event.properties["user_id"]] = api
+    customer_api_file.write_text(json.dumps(customer_api, ensure_ascii=False, indent=4), encoding="utf8")
+    return Result("text", f"已设置为：{api}")
+
+
+@plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
+async def _(event: Event):
+    plugin.temp_handle(["user_id"], 15, rule=identify(event.properties["user_id"]))(set_api)
     api_tip = "\n".join([f"{i}. {name}" for i, name in enumerate(api_names, 1)])
     return Result("text", f"请选择\n{api_tip}")
 
