@@ -1,9 +1,9 @@
 import json
 import time
 from pathlib import Path
-from clovers import Plugin, Event, Result, TempHandle
+from clovers import Plugin, Result, TempHandle
 from .api import AnosuAPI, MirlKoiAPI, LoliconAPI
-
+from .typing import Event, PropertiesProtocol
 from clovers.config import Config as CloversConfig
 from .config import Config
 
@@ -50,23 +50,9 @@ else:
     customer_api = {}
 
 plugin = Plugin()
+plugin.set_protocol("properties", PropertiesProtocol)
 
-
-def to_me(event: Event):
-    return event.properties["to_me"]
-
-
-@plugin.handle(["涩图", "色图"], ["to_me"], rule=to_me)
-async def _(event: Event):
-    msg = (
-        "发送【来一张xx涩图】可获得一张随机色图。"
-        "图片取自：\n"
-        "Jitsu：https://image.anosu.top/\n"
-        "MirlKoi API：https://iw233.cn/\n"
-        "Lolicon API：https://api.lolicon.app/"
-    )
-    return Result("text", msg)
-
+to_me: Plugin.Rule.Checker[Event] = lambda event: event.to_me
 
 lolicon: LoliconAPI
 anosu: AnosuAPI
@@ -89,7 +75,19 @@ async def _():
     await mirlkoi.client.aclose()
 
 
-def get_api(group_id: str, user_id: str, tag: str):
+@plugin.handle(["涩图", "色图"], ["to_me"], rule=to_me)
+async def _(event: Event):
+    msg = (
+        "发送【来一张xx涩图】可获得一张随机色图。"
+        "图片取自：\n"
+        "Jitsu：https://image.anosu.top/\n"
+        "MirlKoi API：https://iw233.cn/\n"
+        "Lolicon API：https://api.lolicon.app/"
+    )
+    return Result("text", msg)
+
+
+def get_api(group_id: str | None, user_id: str, tag: str):
     if user_id in customer_api:
         api_name = customer_api[user_id]
     elif group_id:
@@ -134,12 +132,12 @@ async def _(event: Event):
         n = 5
         msg.append("最多可以点5张图片哦")
 
-    Bot_Nickname = event.properties["Bot_Nickname"]
+    Bot_Nickname = event.Bot_Nickname
 
     msg.append(f"{Bot_Nickname}为你准备了{n}张随机{tag}图片！")
 
-    group_id = event.properties["group_id"]
-    user_id = event.properties["user_id"]
+    group_id = event.group_id
+    user_id = event.user_id
 
     if r18:
         if group_id:
@@ -182,13 +180,6 @@ async def _(event: Event):
 api_names = ["Jitsu/MirlKoi API", "Lolicon API"]
 
 
-def identify(user_id: str):
-    def rule(event: Event):
-        return event.properties["user_id"] == user_id
-
-    return rule
-
-
 async def set_api(event: Event, handle: TempHandle):
     handle.finish()
     index = to_int(event.message)
@@ -198,14 +189,15 @@ async def set_api(event: Event, handle: TempHandle):
         api = api_names[index - 1]
     except (TypeError, IndexError):
         return Result("text", "设置失败")
-    customer_api[event.properties["user_id"]] = api
+    customer_api[event.user_id] = api
     customer_api_file.write_text(json.dumps(customer_api, ensure_ascii=False, indent=4), encoding="utf8")
     return Result("text", f"已设置为：{api}")
 
 
 @plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
 async def _(event: Event):
-    plugin.temp_handle(["user_id"], 15, rule=identify(event.properties["user_id"]))(set_api)
+    rule: Plugin.Rule.Checker[Event] = lambda e: e.user_id == event.user_id
+    plugin.temp_handle(["user_id"], 15, rule=rule)(set_api)
     api_tip = "\n".join([f"{i}. {name}" for i, name in enumerate(api_names, 1)])
     return Result("text", f"请选择\n{api_tip}")
 

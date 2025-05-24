@@ -1,12 +1,12 @@
 [project]
 name = "clovers-setu-collection"
-version = "0.2.1"
+version = "0.2.2"
 description = ""
 authors = [{ name = "KarisAya", email = "karisaya@foxmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0.0"
 dependencies = [
-    "clovers (>=0.4.5,<0.5.0)",
+    "clovers (>=0.4.6,<0.5.0)",
     "pydantic (>=2.11.4,<3.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
 ]
