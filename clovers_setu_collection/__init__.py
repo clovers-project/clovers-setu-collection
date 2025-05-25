@@ -1,8 +1,9 @@
 import json
 import time
 from pathlib import Path
-from clovers import Plugin, EventProtocol, Result, TempHandle
 from .api import AnosuAPI, MirlKoiAPI, LoliconAPI
+from clovers import Plugin, EventProtocol, Result, TempHandle
+from typing import Protocol
 from clovers.config import Config as CloversConfig
 from .config import Config
 
@@ -49,7 +50,7 @@ else:
     customer_api = {}
 
 
-class Event(EventProtocol):
+class Event(EventProtocol, Protocol):
     Bot_Nickname: str
     user_id: str
     group_id: str | None
