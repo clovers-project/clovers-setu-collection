@@ -55,12 +55,6 @@ class Event(EventProtocol, Protocol):
     user_id: str
     group_id: str | None
     to_me: bool
-    nickname: str
-    avatar: str
-    group_avatar: str | None
-    image_list: list[str]
-    permission: int
-    at: list[str]
 
 
 type Rule = Plugin.Rule.Checker[Event]
@@ -71,18 +65,9 @@ plugin.set_protocol("properties", Event)
 
 to_me: Rule = lambda event: event.to_me
 
-
-lolicon: LoliconAPI
-anosu: AnosuAPI
-mirlkoi: MirlKoiAPI
-
-
-@plugin.startup
-async def _():
-    global lolicon, anosu, mirlkoi
-    lolicon = LoliconAPI(**httpx_config.get("LoliconAPI", {}))
-    anosu = AnosuAPI(**httpx_config.get("AnosuAPI", {}))
-    mirlkoi = MirlKoiAPI(**httpx_config.get("MirlKoiAPI", {}))
+lolicon = LoliconAPI(**httpx_config.get("LoliconAPI", {}))
+anosu = AnosuAPI(**httpx_config.get("AnosuAPI", {}))
+mirlkoi = MirlKoiAPI(**httpx_config.get("MirlKoiAPI", {}))
 
 
 @plugin.shutdown
