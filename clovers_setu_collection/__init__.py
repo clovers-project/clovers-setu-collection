@@ -197,7 +197,7 @@ async def set_api(event: Event, handle: TempHandle):
     return Result("text", f"已设置为：{api}")
 
 
-@plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
+@plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "user_id"], rule=to_me)
 async def _(event: Event):
     rule: Rule = lambda e: e.user_id == event.user_id
     plugin.temp_handle(["user_id"], 15, rule=rule)(set_api)
