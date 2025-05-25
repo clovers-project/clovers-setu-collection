@@ -1,9 +1,8 @@
 import json
 import time
 from pathlib import Path
-from clovers import Plugin, Result, TempHandle
+from clovers import Plugin, EventProtocol, Result, TempHandle
 from .api import AnosuAPI, MirlKoiAPI, LoliconAPI
-from .typing import Event, PropertiesProtocol
 from clovers.config import Config as CloversConfig
 from .config import Config
 
@@ -49,10 +48,28 @@ else:
     path.mkdir(parents=True, exist_ok=True)
     customer_api = {}
 
-plugin = Plugin()
-plugin.set_protocol("properties", PropertiesProtocol)
 
-to_me: Plugin.Rule.Checker[Event] = lambda event: event.to_me
+class Event(EventProtocol):
+    Bot_Nickname: str
+    user_id: str
+    group_id: str | None
+    to_me: bool
+    nickname: str
+    avatar: str
+    group_avatar: str | None
+    image_list: list[str]
+    permission: int
+    at: list[str]
+
+
+type Rule = Plugin.Rule.Checker[Event]
+
+
+plugin = Plugin()
+plugin.set_protocol("properties", Event)
+
+to_me: Rule = lambda event: event.to_me
+
 
 lolicon: LoliconAPI
 anosu: AnosuAPI
@@ -196,7 +213,7 @@ async def set_api(event: Event, handle: TempHandle):
 
 @plugin.handle(["设置api", "切换api", "指定api"], ["to_me", "group_id", "user_id"], rule=to_me)
 async def _(event: Event):
-    rule: Plugin.Rule.Checker[Event] = lambda e: e.user_id == event.user_id
+    rule: Rule = lambda e: e.user_id == event.user_id
     plugin.temp_handle(["user_id"], 15, rule=rule)(set_api)
     api_tip = "\n".join([f"{i}. {name}" for i, name in enumerate(api_names, 1)])
     return Result("text", f"请选择\n{api_tip}")
