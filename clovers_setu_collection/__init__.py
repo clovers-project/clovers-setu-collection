@@ -151,7 +151,7 @@ async def _(event: Event):
     msg.append(f"使用api：{api.name}")
     start = time.time()
     image_list = await api.call(n, r18, tag)
-    msg.append(f"获取耗时：{(time.time() - start)*1000 :.2f}ms")
+    msg.append(f"获取耗时：{(time.time() - start) :.2f}s")
     msg = "\n".join(msg)
     if not image_list:
         return Result("text", msg + "\n获取图片失败...")
