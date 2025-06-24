@@ -62,6 +62,6 @@ proxy = "http://127.0.0.1:7897"
 
 [Jitsu](https://image.anosu.top/) 简单好用的色图 api
 
-[MirlKoi API](https://iw233.cn/) 可以避免 bot 被封的超安全（好看但是不涩）色图 api
+~~[MirlKoi API](https://iw233.cn/) 可以避免 bot 被封的超安全（好看但是不涩）色图 api~~ 挂了
 
 [Lolicon API](https://api.lolicon.app/) 使用这个的时候请注意身体
