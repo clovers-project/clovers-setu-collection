@@ -7,6 +7,8 @@ logger = logging.getLogger("setu_api")
 
 
 class SetuAPI(ABC):
+    name: str = "SetuAPI"
+
     def __init__(self, **kwargs):
         self.client = httpx.AsyncClient(**kwargs)
 
@@ -25,6 +27,7 @@ class SetuAPI(ABC):
         return resp.content
 
     async def call(self, n: int, r18: int, tag: str, **kwargs):
+        kwargs["headers"] = {"Referer": "http://www.weibo.com/"}
         urls = await self.api(n, r18, tag)
         if not urls:
             return

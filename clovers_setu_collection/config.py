@@ -22,7 +22,7 @@ class Config(BaseModel):
     """私聊使用的图片api"""
     public_setu_limit: bool = True
     """群聊图片限制（别关）"""
-    public_setu_api: str = "Jitsu/MirlKoi API"
+    public_setu_api: str = "Anosu API"
     """群聊使用的图片api"""
     httpx_config: HttpxConfig = {
         "LoliconAPI": {},
