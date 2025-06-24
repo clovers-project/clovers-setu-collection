@@ -20,3 +20,7 @@ class API(SetuAPI):
         if not anosu_list:
             return
         return [x["url"] for x in anosu_list]
+
+    async def call(self, n: int, r18: int, tag: str, **kwargs):
+        kwargs["headers"] = {"Referer": "http://www.weibo.com/"}
+        return await super().call(n, r18, tag, **kwargs)

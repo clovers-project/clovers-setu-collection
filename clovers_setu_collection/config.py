@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TypedDict, Any
 
 
-class HttpxConfig(TypedDict):
+class HttpxConfig(TypedDict, total=False):
     """httpx配置"""
 
     LoliconAPI: dict[str, Any]
